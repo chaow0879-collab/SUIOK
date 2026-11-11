@@ -62,7 +62,7 @@ v2rayN → 订阅分组 → 添加 → 填入「订阅地址」→ 更新订阅�
 | `--version v1.6.7` | 指定 s-ui 版本（默认用脚本内的 `SUI_VERSION`） |
 | `--reality-target host` | Reality 借用的网站，默认 `swdist.apple.com`（需支持 TLS1.3 + H2） |
 | `--skip-dns-check` | 跳过域名解析检查 |
-| `--force` | 已安装 s-ui 时仍继续（会新增一套配置，旧服务器慎用） |
+| `--force` | 已安装 s-ui 时仍继续（会重置面板账号/端口并新增一套节点，旧服务器慎用） |
 
 ## 日常维护
 

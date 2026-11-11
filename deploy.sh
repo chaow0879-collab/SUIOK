@@ -10,7 +10,7 @@
 #    --version v1.6.7             指定 s-ui 版本（默认用下面的 SUI_VERSION）
 #    --reality-target host        Reality 借用的网站（默认 swdist.apple.com）
 #    --skip-dns-check             跳过“域名是否解析到本机”的检查
-#    --force                      已装过 s-ui 也继续（会覆盖面板设置和节点）
+#    --force                      已装过 s-ui 也继续（会重置面板账号/端口，并新增一套节点）
 #
 #  部署内容：
 #    s-ui 面板 + 订阅（HTTPS，Let's Encrypt 证书，acme.sh 自动续期）
