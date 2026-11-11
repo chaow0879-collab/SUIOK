@@ -1,0 +1,68 @@
+name: 跟踪 s-ui 官方版本
+
+# 每天检查一次 alireza0/s-ui 的最新正式版，有新版本就更新 deploy.sh 里的 SUI_VERSION
+on:
+  schedule:
+    - cron: "17 20 * * *"   # 每天 UTC 20:17（北京时间 04:17）
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 查询官方最新版本
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          latest=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/alireza0/s-ui/releases/latest | jq -r .tag_name)
+          current=$(grep -oP '^SUI_VERSION="\K[^"]+' deploy.sh)
+          echo "current=$current latest=$latest"
+          [[ "$latest" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "版本号格式异常：$latest"; exit 1; }
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest"   >> "$GITHUB_OUTPUT"
+
+      - name: 校验新版本发布完整
+        if: steps.ver.outputs.latest != steps.ver.outputs.current
+        env:
+          V: ${{ steps.ver.outputs.latest }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/alireza0/s-ui/releases/download/$V"
+          for f in s-ui-linux-amd64.tar.gz s-ui-linux-arm64.tar.gz SHA256SUMS; do
+            curl -fsSIL "$base/$f" >/dev/null || { echo "缺少发布文件 $f"; exit 1; }
+          done
+          curl -fsSL "https://raw.githubusercontent.com/alireza0/s-ui/$V/install.sh" -o /tmp/install.sh
+          bash -n /tmp/install.sh
+          grep -q 'read -r -p "$(t ask_modify)"' /tmp/install.sh \
+            || { echo "官方安装脚本的交互流程变了，需要人工检查 deploy.sh"; exit 1; }
+
+      - name: 更新 deploy.sh 并提交
+        if: steps.ver.outputs.latest != steps.ver.outputs.current
+        env:
+          OLD: ${{ steps.ver.outputs.current }}
+          NEW: ${{ steps.ver.outputs.latest }}
+        run: |
+          set -euo pipefail
+          sed -i "s/^SUI_VERSION=\"$OLD\"/SUI_VERSION=\"$NEW\"/" deploy.sh
+          bash -n deploy.sh
+          echo "- $(date -u +%F)：s-ui $OLD → $NEW（自动）" >> CHANGELOG.md
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy.sh CHANGELOG.md
+          git commit -m "chore: s-ui $OLD -> $NEW"
+          git push
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash -n deploy.sh
+      - run: shellcheck -S error deploy.sh
