@@ -19,7 +19,7 @@
 set -euo pipefail
 
 # 由 GitHub Actions 自动更新为官方最新版本，请勿改动这一行的格式
-SUI_VERSION="v1.6.7"
+SUI_VERSION="v1.6.8"
 
 REALITY_TARGET="swdist.apple.com"
 MASQUERADE_URL="https://www.apple.com"
